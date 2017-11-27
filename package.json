@@ -1,11 +1,10 @@
 {
   "name": "homie-sentinel-server",
   "version": "1.0.0",
-  "description":
-    "Homie Sentinel Server manages local instances of Homie devices",
+  "description": "Homie Sentinel Server manages local instances of Homie devices",
   "main": "index.js",
   "bin": {
-    "homie-sentinel": "bin/index.js"
+    "homie-server": "bin/index.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -21,6 +20,7 @@
   },
   "homepage": "https://github.com/bcharbonnier/homie-sentinel-server#readme",
   "dependencies": {
+    "body-parser": "1.18.2",
     "chalk": "^2.3.0",
     "commander": "^2.12.1",
     "eslint": "^4.11.0",

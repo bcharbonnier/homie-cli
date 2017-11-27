@@ -6,47 +6,31 @@ const { fork } = require("child_process");
 const chalk = require("chalk");
 const program = require("commander");
 
+const { checkConfigFile } = require("./util");
+
 const pkg = require("../package.json");
 
 const CWD = process.cwd();
 const CONFIG_FILE = path.join(CWD, "config.json");
-const SENTINEL = path.join(CWD, "index.js");
-
-function hasConfigFile() {
-  return fs.existsSync(CONFIG_FILE);
-}
-
-function checkConfigFile() {
-  if (!hasConfigFile()) {
-    console.error(chalk.red("Missing configuration file for your sentinel."));
-    console.error(`Please create a config.json in '${CWD}'`);
-    process.exit(1);
-  }
-}
+const SENTINEL_SERVER = path.join(CWD, "server", "index.js");
+const SENTINEL = path.join(CWD, "sentinel", "index.js");
 
 program.version(pkg.version).description(pkg.description);
 
 program
-  .command("server")
-  .description("Start a local sentinel server")
-  .option("--start", "Start the server")
-  .option("--install", "Install a script to startup the server at boot time")
+  .command("start")
+  .description("Start a Homie server")
+  .option("--sentinel-only", "Only start a local sentinel", false)
   .action(env => {
-    checkConfigFile();
-    if (env.install) {
-    } else if (env.start) {
-      const sentinel = fork(SENTINEL, { stdio: "inherit" });
-    }
-  });
+    checkConfigFile(CONFIG_FILE);
 
-program
-  .command("package")
-  .description("Manage packages installed in this sentinel")
-  .option("-l, --list", "List installed packages")
-  .option("-a, --add", "Deploy a new package")
-  .option("-r, --remove", "Remove an installed package")
-  .action(() => {
-    checkConfigFile();
+    let server;
+    let sentinel;
+    if (env.sentinelOnly) {
+      sentinel = fork(SENTINEL, process.argv, { stdio: "inherit" });
+    } else {
+      server = fork(SENTINEL_SERVER, { stdio: "inherit" });
+    }
   });
 
 program.parse(process.argv);

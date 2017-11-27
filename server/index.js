@@ -1,35 +1,30 @@
-const { createServer } = require("http");
+const chalk = require("chalk");
 
-const express = require("express");
-const { Server: WebSocketServer } = require("ws");
+const { createWebSocketServer, setup } = require("./server");
+const { createWebSocketClient } = require("../sentinel");
 
-exports.createWebSocketServer = function createWebSocketServer(config) {
-  const { host, port } = config;
-  return new Promise((resolve, reject) => {
-    const app = express();
-    const http = createServer();
+async function bootstrap() {
+  const config = require("../config.json");
 
-    app.use("/login", (req, res) => {});
-    app.use("/logout", (req, res) => {});
+  let wss;
+  let wsc;
+  try {
+    wss = await createWebSocketServer(config);
+    console.log(
+      chalk.bold.yellow(`Homie Server started with pid ${process.pid}`),
+      "(hit CTRL-C to quit)"
+    );
 
-    http.on("request", app);
+    if (process.argv.includes("--with-sentinel")) {
+      wsc = createWebSocketClient(config);
+    }
+  } catch (error) {
+    console.error(chalk.red("Cannot start Homie Sentinel Server"));
+    console.error(error);
+    process.exit(1);
+  }
 
-    const wss = new WebSocketServer({
-      server: http,
-      verifyClient(info, cb) {
-        const fail = () => cb(false, 401, "Unauthorized");
-        const success = () => cb(true);
-        success();
-      }
-    });
+  setup(config, wss);
+}
 
-    http
-      .listen(port, host)
-      .on("listening", () => {
-        resolve(wss);
-      })
-      .on("error", () => {
-        reject(error);
-      });
-  });
-};
+bootstrap();
