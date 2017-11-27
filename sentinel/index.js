@@ -1,32 +1,76 @@
+const { spawn } = require("child_process");
+const { createServer } = require("http");
+const path = require("path");
+const { EOL } = require("os");
+
 const chalk = require("chalk");
+const chokidar = require("chokidar");
+const express = require("express");
 const WebSocket = require("ws");
+const program = require("commander");
+const bonjour = require("bonjour")();
 
-const cfg = require("../config.json");
+const CWD = process.cwd();
+const DEVICES = path.join(CWD, "devices");
+const DEVICES_WATCH = path.join(DEVICES, "*");
 
-function createWebSocketClient(config) {
-  const webSocketClient = new WebSocket(`ws://${config.host}:${config.port}`);
-  webSocketClient.on("open", () => {
-    console.log("connected over websocket");
-  });
+program
+  .option("--config <c>", "Serialized configuration", JSON.parse)
+  .parse(process.argv);
 
-  webSocketClient.on("close", () => {});
+const { config } = program;
+const http = createServer();
+const app = express();
+const watcher = chokidar.watch(DEVICES_WATCH, { depth: 1 });
+const devices = new Set();
+const devicesInstances = new Set();
 
-  webSocketClient.on("error", error => {
-    console.error(error);
-  });
+http.on("request", app);
 
-  webSocketClient.on("message", event => {
-    console.log(`received socket event: ${event}`);
-  });
-}
-
-exports.createWebSocketClient = createWebSocketClient;
-
-if (process.argv.includes("--sentinel-only")) {
-  createWebSocketClient(cfg);
-  chalk.bold.yellow(
-    `Homie Sentinel started in standalone mode with pid ${process.pid}`
+http.listen(config.port, config.host).on("listening", () => {
+  console.log(
+    chalk.bold.yellow(
+      `Homie Sentinel ${chalk.inverse(config.name)} started with pid ${
+        process.pid
+      } on http://${config.host}:${config.port}`
+    )
   );
-} else {
-  chalk.bold.yellow(`Homie Sentinel started associated to an Homie Server`);
+
+  bonjour.publish({
+    name: config.name,
+    port: config.port,
+    type: "homie-sentinel"
+  });
+
+  watcher.on("addDir", path => {
+    if (!devices.has(path)) {
+      const instance = spawn("npx", ["homie-device", "start"], {
+        stdio: "inherit",
+        cwd: path
+      });
+      devices.add(path);
+      devicesInstances.add(instance);
+    }
+  });
+});
+
+if (process.platform === "win32") {
+  var rl = require("readline").createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  rl.on("SIGINT", function() {
+    process.emit("SIGINT");
+  });
 }
+
+process.on("SIGINT", function() {
+  console.log(chalk.bold(`${EOL}Shutting down ${chalk.inverse(config.name)}`));
+  watcher.close();
+  for (const { pid } of devicesInstances) {
+    process.kill(pid);
+  }
+  bonjour.destroy();
+  http.close();
+});
