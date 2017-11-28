@@ -62,3 +62,4 @@ typings/
 /devices/*
 /firmwares/*
 config.json
+/etc/mosquitto/mosquitto.db

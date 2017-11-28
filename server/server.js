@@ -1,12 +1,20 @@
 const { createServer } = require("http");
+const path = require("path");
+
 const bodyParser = require("body-parser");
 const express = require("express");
 const { Server: WebSocketServer } = require("ws");
 
 const { createMqttClient } = require("./lib/mqtt");
 const Client = require("./lib/client");
+const { setup: authSetup } = require("./lib/auth");
+const { createDeviceStore } = require("./lib/devices");
+const { setup: firmwaresSetup } = require("./lib/firmwares");
 
-exports.createWebSocketServer = function createWebSocketServer(config) {
+const CWD = process.cwd();
+const CONSOLE_BUILD_FOLDER = path.join(CWD, "console", "build");
+
+exports.createServer = function createHomieServer(config) {
   const { host, port } = config;
   return new Promise((resolve, reject) => {
     const app = express();
@@ -25,12 +33,9 @@ exports.createWebSocketServer = function createWebSocketServer(config) {
       next();
     });
 
-    app.use("/login", (req, res) => {
-      res.send("Should login");
-    });
-    app.use("/logout", (req, res) => {
-      res.send("should logout");
-    });
+    if (process.env.NODE_ENV === "production") {
+      app.use(express.static(CONSOLE_BUILD_FOLDER));
+    }
 
     http.on("request", app);
 
@@ -47,7 +52,7 @@ exports.createWebSocketServer = function createWebSocketServer(config) {
     http
       .listen(port, host)
       .on("listening", () => {
-        resolve(wss);
+        resolve({ app, wss });
       })
       .on("error", () => {
         reject(error);
@@ -55,15 +60,17 @@ exports.createWebSocketServer = function createWebSocketServer(config) {
   });
 };
 
-exports.setup = function(config, webSocketServer) {
-  const mqttClient = createMqttClient(config.mqtt);
+exports.setupServer = function setupServer(config, appServer, webSocketServer) {
+  const mqttClient = createMqttClient(config);
+
+  authSetup(appServer);
+  firmwaresSetup(appServer);
+  const deviceStore = createDeviceStore(appServer, mqttClient);
 
   const clients = new Set();
   webSocketServer.on("connection", socket => {
-    console.log("new websocket client");
-    const client = new Client(config, socket, mqttClient);
+    const client = new Client(config, socket, deviceStore);
     client.on("close", () => {
-      console.log("deleting websocket client");
       clients.delete(client);
     });
     clients.add(client);

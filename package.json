@@ -1,12 +1,16 @@
 {
-  "name": "homie-sentinel-server",
+  "name": "homie-cli",
   "version": "1.0.0",
-  "description": "Homie Sentinel Server manages local instances of Homie devices",
+  "description":
+    "Homie Server CLI create a server with an interactive UI to manage local instances of Homie devices",
   "main": "index.js",
   "bin": {
-    "homie-server": "bin/index.js"
+    "homie": "bin/index.js"
   },
   "scripts": {
+    "console:start": "cd console && npm run start",
+    "console:build": "cd console && npm run build",
+    "console:prod": "NODE_ENV=production && npm run console:build && homie server start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -28,6 +32,7 @@
     "eslint": "^4.11.0",
     "express": "^4.16.2",
     "glob": "^7.1.2",
+    "mqtt": "^2.14.0",
     "ws": "^3.3.2"
   }
 }

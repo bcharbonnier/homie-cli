@@ -1,30 +1,32 @@
+const path = require("path");
 const chalk = require("chalk");
 
-const { createWebSocketServer, setup } = require("./server");
-const { createWebSocketClient } = require("../sentinel");
+const USER_HOME = process.env.HOME;
+const HOMIE_HOME = path.join(USER_HOME, ".homie");
+const CONFIG_FILE = path.join(HOMIE_HOME, "config.json");
+
+const { createServer, setupServer } = require("./server");
+
+const config = require(CONFIG_FILE);
 
 async function bootstrap() {
-  const config = require("../config.json");
-
-  let wss;
-  let wsc;
   try {
-    wss = await createWebSocketServer(config);
+    const { wss: webSocketServer, app: appServer } = await createServer(config);
     console.log(
-      chalk.bold.yellow(`Homie Server started with pid ${process.pid}`),
+      chalk.bold.yellow(
+        `Homie Server started with pid ${process.pid} listening on ${
+          config.host
+        }:${config.port}`
+      ),
       "(hit CTRL-C to quit)"
     );
 
-    if (process.argv.includes("--with-sentinel")) {
-      wsc = createWebSocketClient(config);
-    }
+    setupServer(config, appServer, webSocketServer);
   } catch (error) {
     console.error(chalk.red("Cannot start Homie Sentinel Server"));
     console.error(error);
     process.exit(1);
   }
-
-  setup(config, wss);
 }
 
 bootstrap();

@@ -36,6 +36,8 @@ http.listen(config.port, config.host).on("listening", () => {
     )
   );
 
+  console.log(chalk.yellow("Working directory:"), CWD);
+
   // Broadcast sentinel over mDNS (Bonjour/Avahi)
   bonjour.publish({
     name: config.name,
@@ -70,7 +72,9 @@ if (process.platform === "win32") {
 
 // Brutal exit, shutting down devices
 process.on("SIGINT", function() {
-  console.log(chalk.bold(`${EOL}Shutting down ${chalk.inverse(config.name)}`));
+  console.log(
+    chalk.yellow(`${EOL}Shutting down ${chalk.inverse(config.name)} sentinel`)
+  );
   watcher.close();
   for (const { pid } of devicesInstances) {
     process.kill(pid);
