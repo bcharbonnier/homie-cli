@@ -36,12 +36,14 @@ http.listen(config.port, config.host).on("listening", () => {
     )
   );
 
+  // Broadcast sentinel over mDNS (Bonjour/Avahi)
   bonjour.publish({
     name: config.name,
     port: config.port,
     type: "homie-sentinel"
   });
 
+  // Watch devices folders to bootstrap new devices
   watcher.on("addDir", path => {
     if (!devices.has(path)) {
       const instance = spawn("npx", ["homie-device", "start"], {
@@ -54,6 +56,7 @@ http.listen(config.port, config.host).on("listening", () => {
   });
 });
 
+// Windows can't manage properly SIGINT
 if (process.platform === "win32") {
   var rl = require("readline").createInterface({
     input: process.stdin,
@@ -65,6 +68,7 @@ if (process.platform === "win32") {
   });
 }
 
+// Brutal exit, shutting down devices
 process.on("SIGINT", function() {
   console.log(chalk.bold(`${EOL}Shutting down ${chalk.inverse(config.name)}`));
   watcher.close();
