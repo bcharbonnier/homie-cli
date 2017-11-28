@@ -7,7 +7,12 @@ const { fork } = require("child_process");
 const chalk = require("chalk");
 const program = require("commander");
 
-const { checkHomeFolder, hasFile, checkConfigFile } = require("./util");
+const {
+  createConfig,
+  checkHomeFolder,
+  hasFile,
+  checkConfigFile
+} = require("./util");
 
 const pkg = require("../package.json");
 
@@ -25,11 +30,21 @@ program.version(pkg.version).description(pkg.description);
 // Configuration files
 program
   .command("config <action>")
+  .option("--reset", "Erase the existing configuration file")
   .description("Manage your Homie configuration")
-  .action(command => {
+  .action((command, options) => {
     switch (command) {
       case "create":
-        fs.writeFileSync(CONFIG_FILE, JSON.stringify({}, null, 2));
+        if (hasFile(CONFIG_FILE) && !options.reset) {
+          console.error(chalk.red("Configuration already exist"));
+          console.error(`
+To overwrite it, you can use this command
+> ${chalk.cyan("homie config create --reset")}
+          `);
+          process.exit(1);
+        }
+
+        createConfig();
         break;
 
       default:
@@ -41,7 +56,7 @@ program
 // Server CLI
 program
   .command("server <command>")
-  .description("Start a Homie Server")
+  .description("Start Homie Server")
   .action(command => {
     checkHomeFolder();
     checkConfigFile(CONFIG_FILE);
@@ -63,7 +78,7 @@ program
   .option("--host [s]", "Host address to bind to (default: 127.0.0.1)")
   .option("--port [n]", "Port to listen to (default: 5000)")
   .option("--name [name]", "Name of the sentinel", HOSTNAME)
-  .description("Start a Homie Sentinel")
+  .description("Start an Homie Sentinel")
   .action((command, options) => {
     const LOCAL_CONFIG = path.join(CWD, "config.json");
     const hostname = os.hostname();
