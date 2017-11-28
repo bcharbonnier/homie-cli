@@ -59,6 +59,6 @@ typings/
 
 .vscode/
 
-/packages/*
+/devices/*
 /firmwares/*
 config.json
