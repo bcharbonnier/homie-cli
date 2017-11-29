@@ -1,64 +1,36 @@
-import mqtt from "mqtt";
 import immutable from "immutable";
 
 import Dispatcher, { dispatch } from "../Dispatcher";
-import { MapStore, withNoMutations } from "../libs/Flux";
+import { MapStore, withNoMutations } from "../lib/Flux";
+import WebSocket from "../lib/WebSocket";
 
 import { ActionTypes } from "../Constants";
 
-import * as MessageAction from "../actions/MessageAction";
-import * as DeviceAction from "../actions/DeviceAction";
+const client = new WebSocket("ws://localhost:5000");
 
-import config from "../config.json";
-
-const CLIENT_ID = `homie-sentinel-ui-${Math.random()
-  .toString(16)
-  .substr(2, 8)}`;
-
-const client = mqtt.connect(
-  `ws://${config.mqtt.mqtt_websocket_host}:${config.mqtt.mqtt_websocket_port}`,
-  {
-    clientId: CLIENT_ID
-  }
-);
-
-client.on("connect", () => {
+client.on("open", () => {
   dispatch({
     type: ActionTypes.CONNECTION_OPEN
   });
 });
 
-client.on("close", () => {
+client.on("close", event => {
   dispatch({
     type: ActionTypes.CONNECTION_LOST
   });
-});
-
-client.on("reconnect", () => {
-  dispatch({
-    type: ActionTypes.CONNECTION_RECONNECT
-  });
-});
-
-client.on("message", (topic, message, packet) => {
-  const [PREFIX, deviceId, ...rest] = topic.split("/"); // eslint-disable-line no-unused-vars
-  MessageAction.receiveMessage(
-    topic,
-    message,
-    deviceId,
-    packet.payload.length === 0 // message deletion, empty message
-  );
-  if (!deviceId.startsWith("$")) {
-    console.info(deviceId, ...rest);
-    DeviceAction.receiveMessage(deviceId, rest.join("/"), message);
+  if (event.code === 1006) {
+    // auth error
+    client.stop();
   }
 });
 
+client.on("message", data => {
+  console.log(data);
+});
+
+client.start();
+
 function handleConnectionOpen(state) {
-  setTimeout(() => {
-    DeviceAction.getList();
-    client.subscribe("homie/#");
-  }, 0);
   return state.withMutations(map => {
     map.set("connected", true);
     map.set("connecting", false);
@@ -76,7 +48,7 @@ function handleReconnect(state) {
 
 function handleSendMessage({ topic, message, options }) {
   options = options || { retain: false };
-  client.publish(topic, message, options);
+  // client.send();
 }
 
 class ConnectionStore extends MapStore {
@@ -102,7 +74,8 @@ class ConnectionStore extends MapStore {
   }
 
   isConnecting() {
-    return this.getState().get("connecting");
+    // return this.getState().get("connecting");
+    return false;
   }
 }
 

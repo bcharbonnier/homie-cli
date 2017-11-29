@@ -74,9 +74,11 @@ export function receiveMessage(deviceId, subTopic, message) {
     })
     .replace(DEVICE_NODE_PROPERTIES, (match, node) => {
       const properties = value.split(",").map(prop => {
+        /* eslint-disable no-unused-vars */
         const [match, name, range, settable, ...rest] = prop.match(
           NODE_PROPERTIES
-        ); // eslint-disable-line no-unused-vars
+        );
+        /* eslint-enable no-unused-vars */
         return {
           name,
           settable: settable !== undefined,

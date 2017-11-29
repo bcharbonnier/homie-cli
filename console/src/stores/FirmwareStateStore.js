@@ -1,5 +1,5 @@
 import Dispatcher from "../Dispatcher";
-import { MapStore } from "../libs/Flux";
+import { MapStore } from "../lib/Flux";
 import { ActionTypes } from "../Constants";
 
 function handleFetchStart(state) {

@@ -1,13 +1,10 @@
-const fs = require("fs");
 const path = require("path");
-const { promisify } = require("util");
 const { EventEmitter } = require("events");
 
 const chalk = require("chalk");
 
+const { writeFile } = require("../util/fs");
 const { log, error } = require("../util/log")("devices");
-
-const writeFile = promisify(fs.writeFile);
 
 const USER_HOME = process.env.HOME;
 const HOMIE_HOME = path.join(USER_HOME, ".homie");
@@ -27,7 +24,7 @@ class DeviceStore extends EventEmitter {
     });
 
     app.get("/api/devices/:deviceName", (req, res) => {
-      const deviceName = req.params.deviceName;
+      const { deviceName } = req.params;
       const device = this.devices[deviceName];
       if (device) {
         res.json({
@@ -45,7 +42,7 @@ class DeviceStore extends EventEmitter {
     });
 
     app.delete("/api/devices/:deviceName", async (req, res) => {
-      const deviceName = req.params.deviceName;
+      const { deviceName } = req.params;
       const device = this.devices[deviceName];
       if (!device) {
         const errorMessage = `device with <id:${deviceName}> does not exist`;
@@ -98,10 +95,12 @@ class DeviceStore extends EventEmitter {
 
   async save() {
     await writeFile(DEVICES_DB, JSON.stringify(this.devices, null, 2));
+    this.emit("devices", this.devices);
   }
 
   getDevice(deviceId) {
-    return this.devices[deviceId] || (this.devices[deviceId] = {});
+    const device = this.devices[deviceId] || (this.devices[deviceId] = {});
+    return device;
   }
 
   getNode(device, nodeId) {

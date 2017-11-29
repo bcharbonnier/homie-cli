@@ -1,5 +1,7 @@
 const { EventEmitter } = require("events");
 
+const { log } = require("../util/log")("client");
+
 module.exports = class Client extends EventEmitter {
   constructor(config, socket, deviceStore) {
     super();
@@ -11,12 +13,22 @@ module.exports = class Client extends EventEmitter {
       this.emit("close");
     });
 
-    this.deviceStore.on("update", device => {
-      this.socket.send({
-        type: "device.update",
-        device
+    log(deviceStore.devices);
+    this.socket.send(JSON.stringify(["devices.update", deviceStore.devices]));
+
+    this.deviceStore
+      .on("update", (device) => {
+        // this.socket.send({
+        //   type: "device.update",
+        //   device,
+        // });
+      })
+      .on("devices", (devices) => {
+        // this.socket.send({
+        //   type: "devices.update",
+        //   devices,
+        // });
       });
-    });
   }
 
   onMessage(message) {}

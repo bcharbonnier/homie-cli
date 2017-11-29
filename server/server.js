@@ -3,7 +3,7 @@ const path = require("path");
 
 const bodyParser = require("body-parser");
 const express = require("express");
-const { Server: WebSocketServer } = require("ws");
+const WebSocket = require("ws");
 
 const { createMqttClient } = require("./lib/mqtt");
 const Client = require("./lib/client");
@@ -20,17 +20,16 @@ exports.createServer = function createHomieServer(config) {
     const app = express();
     const http = createServer();
 
-    app.use(bodyParser.json()); // for parsing application/json
-    app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+    // for parsing application/json
+    app.use(bodyParser.json());
+    // for parsing application/x-www-form-urlencoded
+    app.use(bodyParser.urlencoded({ extended: true }));
 
     // CORS setup
-    app.use(function(req, res, next) {
+    app.use((req, res, next) => {
       res.header("Access-Control-Allow-Origin", req.headers.origin);
       res.header("Access-Control-Allow-Credentials", "true");
-      res.header(
-        "Access-Control-Allow-Headers",
-        "Origin, X-Requested-With, Content-Type, Accept"
-      );
+      res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
       next();
     });
 
@@ -42,14 +41,14 @@ exports.createServer = function createHomieServer(config) {
 
     http.on("request", app);
 
-    const wss = new WebSocketServer({
+    const wss = new WebSocket.Server({
       server: http,
       verifyClient(info, cb) {
         console.log("verifying new client");
         const fail = () => cb(false, 401, "Unauthorized");
         const success = () => cb(true);
         success();
-      }
+      },
     });
 
     http
@@ -57,7 +56,7 @@ exports.createServer = function createHomieServer(config) {
       .on("listening", () => {
         resolve({ app, wss });
       })
-      .on("error", () => {
+      .on("error", (error) => {
         reject(error);
       });
   });
@@ -71,7 +70,7 @@ exports.setupServer = function setupServer(config, appServer, webSocketServer) {
   const deviceStore = createDeviceStore(appServer, mqttClient);
 
   const clients = new Set();
-  webSocketServer.on("connection", socket => {
+  webSocketServer.on("connection", (socket) => {
     const client = new Client(config, socket, deviceStore);
     client.on("close", () => {
       clients.delete(client);
