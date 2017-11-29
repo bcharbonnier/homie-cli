@@ -3,11 +3,8 @@ const { EventEmitter } = require("events");
 const chalk = require("chalk");
 const mqtt = require("mqtt");
 
-function log(...parts) {
-  console.log(chalk.dim("[mqtt]"), ...parts);
-}
+const { log } = require("../util/log")("mqtt");
 
-let client;
 class MqttClient extends EventEmitter {
   constructor(config) {
     super();
@@ -24,7 +21,7 @@ class MqttClient extends EventEmitter {
     log(`Connecting to broker on ${uri}`);
 
     this.mqtt = mqtt.connect(uri, {
-      clientId: this.clientId
+      clientId: this.clientId,
     });
 
     this.mqtt.on("connect", this.onConnect);
@@ -42,7 +39,7 @@ class MqttClient extends EventEmitter {
     }
 
     const deviceTopic = `${base_topic}/+/+`;
-    this.mqtt.subscribe(deviceTopic, error => {
+    this.mqtt.subscribe(deviceTopic, (error) => {
       if (error) {
         log(chalk.red("Error:"), error);
         return;
@@ -51,7 +48,7 @@ class MqttClient extends EventEmitter {
     });
 
     const devicePropertyTopic = `${base_topic}/+/+/+`;
-    this.mqtt.subscribe(devicePropertyTopic, error => {
+    this.mqtt.subscribe(devicePropertyTopic, (error) => {
       if (error) {
         log(chalk.red("Error:"), error);
         return;
@@ -78,22 +75,10 @@ class MqttClient extends EventEmitter {
     } else {
       if (rest.length == 2 && rest[1].startsWith("$")) {
         const [nodeId, attribute] = rest;
-        this.emit(
-          "device-node-attribute",
-          deviceId,
-          nodeId,
-          attribute,
-          message
-        );
+        this.emit("device-node-attribute", deviceId, nodeId, attribute, message);
       } else {
         const [nodeId, propertyId] = rest;
-        this.emit(
-          "device-node-property",
-          deviceId,
-          nodeId,
-          propertyId,
-          message
-        );
+        this.emit("device-node-property", deviceId, nodeId, propertyId, message);
       }
 
       if (rest.length === 3 && rest[rest.length - 1] === "set") {
@@ -104,5 +89,5 @@ class MqttClient extends EventEmitter {
 }
 
 exports.createMqttClient = function createMqttClient(config) {
-  return (client = new MqttClient(config));
+  return new MqttClient(config);
 };

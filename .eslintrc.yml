@@ -1,0 +1,8 @@
+extends: airbnb-base
+rules:
+  quotes: [2, "double", "avoid-escape"]
+  indent: 2
+  func-style: 0
+  func-names: 0
+  comma-dangle: ["error", {"arrays": "always-multiline", "objects": "always-multiline", "imports": "never", "exports": "never", "functions": "never"}]
+

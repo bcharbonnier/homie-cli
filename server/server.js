@@ -20,7 +20,8 @@ exports.createServer = function createHomieServer(config) {
     const app = express();
     const http = createServer();
 
-    app.use(bodyParser.json());
+    app.use(bodyParser.json()); // for parsing application/json
+    app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 
     // CORS setup
     app.use(function(req, res, next) {
@@ -36,6 +37,8 @@ exports.createServer = function createHomieServer(config) {
     if (process.env.NODE_ENV === "production") {
       app.use(express.static(CONSOLE_BUILD_FOLDER));
     }
+
+    app.get("/api", (req, res) => res.send("200 OK"));
 
     http.on("request", app);
 

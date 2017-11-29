@@ -41,7 +41,7 @@ export default class FirmwareList extends React.PureComponent {
               <div>2.0.0</div>
             </div>
           </td>
-          <td>{firmware.human_size}</td>
+          <td>{firmware.size}</td>
           <td>
             <ActionButton
               label={
