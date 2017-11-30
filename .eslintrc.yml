@@ -1,6 +1,9 @@
 extends: airbnb-base
 rules:
-  quotes: [2, "double", "avoid-escape"]
+  quotes:
+    - 2
+    - "double"
+    - "avoid-escape"
   indent: 2
   func-style: 0
   func-names: 0
