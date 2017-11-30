@@ -6,7 +6,7 @@ function handleDeviceListReceived(state, { devices }) {
   if (!devices) {
     return state;
   }
-  return state.withMutations(map => {
+  return state.withMutations((map) => {
     for (const deviceId in devices) {
       const device = devices[deviceId];
       device.id = deviceId;
@@ -25,15 +25,14 @@ function handleDeviceDelete(state, { devices, device }) {
 //     return state;
 // }
 
-function handleDevicePropertyUpdate(state, { deviceId, property, value }) {
+function handleDevicePropertyUpdate(state, { deviceId, attribute, value }) {
   if (state.has(deviceId)) {
     const oldDevice = state.get(deviceId);
-    switch (property) {
+    switch (attribute) {
       case "online":
-        value = value === "true" ? true : false;
         if (value === false) {
-          oldDevice.uptime = 0;
-          oldDevice.signal = 0;
+          oldDevice["stats/uptime"] = 0;
+          oldDevice["stats/signal"] = 0;
         }
         break;
       default:
@@ -42,7 +41,7 @@ function handleDevicePropertyUpdate(state, { deviceId, property, value }) {
 
     const device = {
       ...oldDevice,
-      [property]: value
+      [attribute]: value,
     };
     return state.set(deviceId, device);
   }
@@ -55,10 +54,7 @@ class DeviceStore extends MapStore {
     this.addAction(ActionTypes.DEVICE_DELETE_SUCCESS, handleDeviceDelete);
     // this.addAction(ActionTypes.DEVICE_RECEIVED, handleDeviceReceived);
 
-    this.addAction(
-      ActionTypes.DEVICE_PROPERTY_UPDATE,
-      handleDevicePropertyUpdate
-    );
+    this.addAction(ActionTypes.DEVICE_PROPERTY_UPDATE, handleDevicePropertyUpdate);
     // this.addAction(ActionTypes.DEVICE_UPDATE_STATS, handleDeviceStatsUpdate);
     // this.addAction(ActionTypes.DEVICE_UPDATE_ONLINE, handleDeviceOnlineUpdate);
     // this.addAction(ActionTypes.DEVICE_UPDATE_IP, handleDeviceIPUpdate);

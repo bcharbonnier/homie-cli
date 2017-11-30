@@ -1,36 +1,37 @@
 import immutable from "immutable";
+import io from "socket.io-client";
 
 import Dispatcher, { dispatch } from "../Dispatcher";
 import { MapStore, withNoMutations } from "../lib/Flux";
-import WebSocket from "../lib/WebSocket";
 
 import { ActionTypes } from "../Constants";
 
 import * as MessageAction from "../actions/MessageAction";
 import * as NotificationAction from "../actions/NotificationAction";
 
-const client = new WebSocket("ws://localhost:5000");
+const client = io("ws://localhost:5000", {
+  autoConnect: false,
+});
 
-client.on("open", () => {
+client.on("connect", () => {
   dispatch({
     type: ActionTypes.CONNECTION_OPEN,
   });
 });
 
-client.on("close", (event) => {
+client.on("disconnect", () => {
   dispatch({
     type: ActionTypes.CONNECTION_LOST,
   });
 });
 
-client.on("error", () => {
-  console.warn(`Connection via websocket to ${client.url} not available`);
+client.on("reconnect_error", () => {
   dispatch({
     type: ActionTypes.CONNECTION_LOST,
   });
 });
 
-client.on("reconnect", () => {
+client.on("reconnecting", () => {
   dispatch({
     type: ActionTypes.CONNECTION_RECONNECT,
   });
@@ -44,13 +45,23 @@ Please check your network connection`);
   });
 });
 
-client.on("message", (data) => {
-  if (data[0] === "mqtt.message") {
-    MessageAction.receiveMessage(data[1], data[2]);
-  }
+client.on("mqtt.message", MessageAction.receiveMessage);
+client.on("device.update", (deviceId, attribute, value) => {
+  dispatch({
+    type: ActionTypes.DEVICE_PROPERTY_UPDATE,
+    deviceId,
+    attribute,
+    value,
+  });
+});
+client.on("devices.update", (devices) => {
+  dispatch({
+    type: ActionTypes.LOAD_DEVICES_SUCCESS,
+    devices,
+  });
 });
 
-client.start();
+client.connect();
 
 function handleConnectionOpen(state) {
   return state.withMutations((map) => {
@@ -98,7 +109,6 @@ class ConnectionStore extends MapStore {
 
   isConnecting() {
     return this.getState().get("connecting");
-    // return false;
   }
 }
 

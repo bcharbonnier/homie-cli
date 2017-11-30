@@ -8,12 +8,12 @@ module.exports = class Client extends EventEmitter {
     this.mqttClient = mqttClient;
     this.deviceClient = deviceClient;
 
-    this.socket.on("close", () => this.emit("close"));
+    this.socket.on("disconnect", () => this.emit("disconnect"));
 
     this.sendDevices(this.deviceClient.devices);
 
     this.mqttClient.on("message", (topic, message) => {
-      this.socket.send(JSON.stringify(["mqtt.message", topic, message]));
+      this.socket.emit("mqtt.message", topic, message);
     });
 
     this.deviceClient
@@ -23,10 +23,10 @@ module.exports = class Client extends EventEmitter {
   }
 
   sendDeviceUpdate(deviceId, attribute, value) {
-    this.socket.send(JSON.stringify(["device.update", deviceId, attribute, value]));
+    this.socket.emit("device.update", deviceId, attribute, value);
   }
 
   sendDevices(devices) {
-    this.socket.send(JSON.stringify(["devices.update", devices]));
+    this.socket.emit("devices.update", devices);
   }
 };

@@ -3,7 +3,7 @@ const path = require("path");
 
 const bodyParser = require("body-parser");
 const express = require("express");
-const WebSocket = require("ws");
+const socketIO = require("socket.io");
 
 const CWD = process.cwd();
 const CONSOLE_BUILD_FOLDER = path.join(CWD, "console", "build");
@@ -12,9 +12,11 @@ exports.createServer = function createHomieServer(config) {
   const { host, port } = config;
   return new Promise((resolve, reject) => {
     const app = express();
-    const http = createServer();
+    const http = createServer(app);
+    const io = socketIO(http);
 
     app.set("config", config);
+    app.set("wss", io);
     // for parsing application/json
     app.use(bodyParser.json());
     // for parsing application/x-www-form-urlencoded
@@ -34,20 +36,6 @@ exports.createServer = function createHomieServer(config) {
         res.sendFile(path.join(CONSOLE_BUILD_FOLDER, "index.html"));
       });
     }
-
-    http.on("request", app);
-
-    app.set(
-      "wss",
-      new WebSocket.Server({
-        server: http,
-        verifyClient(info, cb) {
-          // const fail = () => cb(false, 401, "Unauthorized");
-          const success = () => cb(true);
-          success();
-        },
-      })
-    );
 
     http
       .listen(port, host)

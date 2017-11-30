@@ -35,7 +35,7 @@ async function bootstrap() {
     const clients = new Set();
     server.get("wss").on("connection", (socket) => {
       const client = new Client(config, socket, mqttClient, deviceClient);
-      client.on("close", () => {
+      client.on("disconnect", () => {
         clients.delete(client);
       });
       clients.add(client);

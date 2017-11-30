@@ -4,11 +4,12 @@ import { ActionTypes } from "../Constants";
 import DeviceStore from "../stores/DeviceStore";
 
 export const receiveMessage = (topic, message, deviceId, deleted = false) => {
+  console.log(topic, message);
   const payload = {
     type: ActionTypes.MESSAGE_RECEIVED,
     topic: topic.toString(),
     message: message.toString(),
-    deleted
+    deleted,
   };
 
   if (!DeviceStore.getDevice(deviceId)) {

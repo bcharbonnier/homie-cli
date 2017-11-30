@@ -1,10 +1,12 @@
+import "font-awesome/css/font-awesome.min.css";
+import "bulma/css/bulma.css";
+
 import React from "react";
 import ReactDOM from "react-dom";
+
 import App from "./components/App.react";
 import Flux from "./lib/Flux";
 
-import "font-awesome/css/font-awesome.min.css";
-import "bulma/css/bulma.css";
 import "./index.css";
 
 Flux.initialize();
