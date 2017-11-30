@@ -1,35 +1,32 @@
 const { EventEmitter } = require("events");
 
-const { log } = require("../util/log")("client");
-
 module.exports = class Client extends EventEmitter {
-  constructor(config, socket, deviceStore) {
+  constructor(config, socket, mqttClient, deviceClient) {
     super();
     this.config = config;
     this.socket = socket;
-    this.deviceStore = deviceStore;
+    this.mqttClient = mqttClient;
+    this.deviceClient = deviceClient;
 
-    this.socket.on("close", () => {
-      this.emit("close");
+    this.socket.on("close", () => this.emit("close"));
+
+    this.sendDevices(this.deviceClient.devices);
+
+    this.mqttClient.on("message", (topic, message) => {
+      this.socket.send(JSON.stringify(["mqtt.message", topic, message]));
     });
 
-    log(deviceStore.devices);
-    this.socket.send(JSON.stringify(["devices.update", deviceStore.devices]));
-
-    this.deviceStore
-      .on("update", (device) => {
-        // this.socket.send({
-        //   type: "device.update",
-        //   device,
-        // });
-      })
-      .on("devices", (devices) => {
-        // this.socket.send({
-        //   type: "devices.update",
-        //   devices,
-        // });
-      });
+    this.deviceClient
+      .on("update", (deviceId, device, attribute, value) =>
+        this.sendDeviceUpdate(deviceId, attribute, value))
+      .on("devices", devices => this.sendDevices(devices));
   }
 
-  onMessage(message) {}
+  sendDeviceUpdate(deviceId, attribute, value) {
+    this.socket.send(JSON.stringify(["device.update", deviceId, attribute, value]));
+  }
+
+  sendDevices(devices) {
+    this.socket.send(JSON.stringify(["devices.update", devices]));
+  }
 };

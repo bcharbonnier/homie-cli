@@ -5,12 +5,6 @@ const bodyParser = require("body-parser");
 const express = require("express");
 const WebSocket = require("ws");
 
-const { createMqttClient } = require("./lib/mqtt");
-const Client = require("./lib/client");
-const { setup: authSetup } = require("./lib/auth");
-const { createDeviceStore } = require("./lib/devices");
-const { setup: firmwaresSetup } = require("./lib/firmwares");
-
 const CWD = process.cwd();
 const CONSOLE_BUILD_FOLDER = path.join(CWD, "console", "build");
 
@@ -20,6 +14,7 @@ exports.createServer = function createHomieServer(config) {
     const app = express();
     const http = createServer();
 
+    app.set("config", config);
     // for parsing application/json
     app.use(bodyParser.json());
     // for parsing application/x-www-form-urlencoded
@@ -35,46 +30,32 @@ exports.createServer = function createHomieServer(config) {
 
     if (process.env.NODE_ENV === "production") {
       app.use(express.static(CONSOLE_BUILD_FOLDER));
+      app.use((req, res) => {
+        res.sendFile(path.join(CONSOLE_BUILD_FOLDER, "index.html"));
+      });
     }
-
-    app.get("/api", (req, res) => res.send("200 OK"));
 
     http.on("request", app);
 
-    const wss = new WebSocket.Server({
-      server: http,
-      verifyClient(info, cb) {
-        console.log("verifying new client");
-        const fail = () => cb(false, 401, "Unauthorized");
-        const success = () => cb(true);
-        success();
-      },
-    });
+    app.set(
+      "wss",
+      new WebSocket.Server({
+        server: http,
+        verifyClient(info, cb) {
+          // const fail = () => cb(false, 401, "Unauthorized");
+          const success = () => cb(true);
+          success();
+        },
+      })
+    );
 
     http
       .listen(port, host)
       .on("listening", () => {
-        resolve({ app, wss });
+        resolve(app);
       })
       .on("error", (error) => {
         reject(error);
       });
-  });
-};
-
-exports.setupServer = function setupServer(config, appServer, webSocketServer) {
-  const mqttClient = createMqttClient(config);
-
-  authSetup(appServer);
-  firmwaresSetup(appServer);
-  const deviceStore = createDeviceStore(appServer, mqttClient);
-
-  const clients = new Set();
-  webSocketServer.on("connection", (socket) => {
-    const client = new Client(config, socket, deviceStore);
-    client.on("close", () => {
-      clients.delete(client);
-    });
-    clients.add(client);
   });
 };

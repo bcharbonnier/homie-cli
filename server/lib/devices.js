@@ -64,28 +64,52 @@ class DeviceStore extends EventEmitter {
       this.emit("device-deleted", device);
     });
 
-    mqttClient.on("device-attribute", async (deviceId, attribute, value) => {
+    mqttClient.on("device", async (message) => {
+      const { deviceId, attribute, value } = message;
       const device = this.getDevice(deviceId);
-      device[attribute] = value;
-      await this.save();
-      this.emit("update", device);
+      switch (attribute) {
+        case "stats/interval":
+        case "stats/uptime":
+        case "stats/memory":
+          device[attribute] = +value;
+          break;
+
+        case "online":
+          device[attribute] = value === "true";
+          break;
+
+        default:
+          device[attribute] = value;
+          break;
+      }
+
+      this.emit("update", deviceId, device, attribute, device[attribute]);
+      await this.save(false);
     });
 
-    mqttClient.on("device-node-attribute", async (deviceId, nodeId, attribute, value) => {
+    mqttClient.on("node", async (message) => {
+      const {
+        deviceId, nodeId, attribute, value,
+      } = message;
       const device = this.getDevice(deviceId);
       const node = this.getNode(device, nodeId);
+
       node[attribute] = value;
-      await this.save();
+
       this.emit("update", device);
+      await this.save(false);
     });
 
-    mqttClient.on("device-node-property", async (deviceId, nodeId, propertyId, value) => {
-      const device = this.getDevice(deviceId);
-      const node = this.getNode(device, nodeId);
-      node[propertyId] = value;
-      await this.save();
-      this.emit("update", device);
-    });
+    // mqttClient.on("property", async (message) => {
+    //   const {
+    //     deviceId, nodeId, propertyId, value,
+    //   } = message;
+    //   const device = this.getDevice(deviceId);
+    //   const node = this.getNode(device, nodeId);
+    //   node[propertyId] = value;
+    //   await this.save();
+    //   this.emit("update", device);
+    // });
   }
 
   deleteDevice(deviceName) {
@@ -93,9 +117,11 @@ class DeviceStore extends EventEmitter {
     delete this.devices[deviceName];
   }
 
-  async save() {
+  async save(notify = true) {
     await writeFile(DEVICES_DB, JSON.stringify(this.devices, null, 2));
-    this.emit("devices", this.devices);
+    if (notify) {
+      this.emit("devices", this.devices);
+    }
   }
 
   getDevice(deviceId) {
@@ -103,14 +129,16 @@ class DeviceStore extends EventEmitter {
     return device;
   }
 
-  getNode(device, nodeId) {
+  getNode(deviceId, nodeId) {
+    const device = typeof deviceId === "string" ? this.getDevice(deviceId) : deviceId;
     if (!device.nodes) {
       device.nodes = {};
     }
-    return device.nodes[nodeId] || (device.nodes[nodeId] = {});
+    const node = device.nodes[nodeId] || (device.nodes[nodeId] = {});
+    return node;
   }
 }
 
-exports.createDeviceStore = function (app, mqttClient) {
+exports.createDeviceClient = function (app, mqttClient) {
   return new DeviceStore(app, mqttClient);
 };

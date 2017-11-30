@@ -13,9 +13,7 @@ function Notification(props) {
   const { type, children } = props;
   return (
     <div className={classnames("notification", type)}>
-      {type === "is-danger" && (
-        <button onClick={props.onClose} className="delete" />
-      )}
+      {type === "is-danger" && <button onClick={props.onClose} className="delete" />}
       {children}
     </div>
   );
@@ -44,13 +42,13 @@ class Notifications extends React.Component {
 
   static calculateState() {
     return {
-      notifications: NotificationStore.getAll()
+      notifications: NotificationStore.getAll(),
     };
   }
 
   render() {
     const notifications = this.state.notifications
-      .map(n => {
+      .map((n) => {
         const key = uuid();
         switch (n.type) {
           case NOTIFICATION.ERROR:
@@ -66,14 +64,10 @@ class Notifications extends React.Component {
             );
 
           case NOTIFICATION.WARNING:
-            return (
-              <WarningNotification key={key}>{n.message}</WarningNotification>
-            );
+            return <WarningNotification key={key}>{n.message}</WarningNotification>;
 
           case NOTIFICATION.SUCCESS:
-            return (
-              <SuccessNotification key={key}>{n.message}</SuccessNotification>
-            );
+            return <SuccessNotification key={key}>{n.message}</SuccessNotification>;
 
           default:
             return null;

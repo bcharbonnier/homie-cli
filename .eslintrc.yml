@@ -1,4 +1,6 @@
 extends: airbnb-base
+env:
+  jasmine: true
 rules:
   quotes:
     - 2

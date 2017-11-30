@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { fork } = require("child_process");
@@ -8,10 +7,7 @@ const chalk = require("chalk");
 const program = require("commander");
 
 const {
-  createConfig,
-  checkHomeFolder,
-  hasFile,
-  checkConfigFile
+  createConfig, checkHomeFolder, hasFile, checkConfigFile,
 } = require("./util");
 
 const pkg = require("../package.json");
@@ -57,7 +53,7 @@ To overwrite it, you can use this command
 program
   .command("server <command>")
   .description("Start Homie Server")
-  .action(command => {
+  .action((command) => {
     checkHomeFolder();
     checkConfigFile(CONFIG_FILE);
 
@@ -86,7 +82,7 @@ program
       {
         host: "127.0.0.1",
         port: 5000,
-        name: hostname
+        name: hostname,
       },
       hasFile(LOCAL_CONFIG) ? require(LOCAL_CONFIG) : {}
     );
@@ -106,7 +102,7 @@ program
     switch (command) {
       case "start":
         const sentinel = fork(SENTINEL, ["--config", JSON.stringify(config)], {
-          stdio: "inherit"
+          stdio: "inherit",
         });
         break;
 

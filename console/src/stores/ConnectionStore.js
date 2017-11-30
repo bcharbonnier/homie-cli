@@ -6,32 +6,54 @@ import WebSocket from "../lib/WebSocket";
 
 import { ActionTypes } from "../Constants";
 
+import * as MessageAction from "../actions/MessageAction";
+import * as NotificationAction from "../actions/NotificationAction";
+
 const client = new WebSocket("ws://localhost:5000");
 
 client.on("open", () => {
   dispatch({
-    type: ActionTypes.CONNECTION_OPEN
+    type: ActionTypes.CONNECTION_OPEN,
   });
 });
 
-client.on("close", event => {
+client.on("close", (event) => {
   dispatch({
-    type: ActionTypes.CONNECTION_LOST
+    type: ActionTypes.CONNECTION_LOST,
   });
-  if (event.code === 1006) {
-    // auth error
-    client.stop();
-  }
 });
 
-client.on("message", data => {
-  console.log(data);
+client.on("error", () => {
+  console.warn(`Connection via websocket to ${client.url} not available`);
+  dispatch({
+    type: ActionTypes.CONNECTION_LOST,
+  });
+});
+
+client.on("reconnect", () => {
+  dispatch({
+    type: ActionTypes.CONNECTION_RECONNECT,
+  });
+});
+
+client.on("reconnect_failed", () => {
+  NotificationAction.error(`All attempts to reconnect to the server have failed.
+Please check your network connection`);
+  dispatch({
+    type: ActionTypes.CONNECTION_LOST,
+  });
+});
+
+client.on("message", (data) => {
+  if (data[0] === "mqtt.message") {
+    MessageAction.receiveMessage(data[1], data[2]);
+  }
 });
 
 client.start();
 
 function handleConnectionOpen(state) {
-  return state.withMutations(map => {
+  return state.withMutations((map) => {
     map.set("connected", true);
     map.set("connecting", false);
     return map;
@@ -39,7 +61,11 @@ function handleConnectionOpen(state) {
 }
 
 function handleConnectionLost(state) {
-  return state.set("connected", false);
+  return state.withMutations((map) => {
+    map.set("connected", false);
+    map.set("connecting", false);
+    return map;
+  });
 }
 
 function handleReconnect(state) {
@@ -56,16 +82,13 @@ class ConnectionStore extends MapStore {
     this.addAction(ActionTypes.CONNECTION_OPEN, handleConnectionOpen);
     this.addAction(ActionTypes.CONNECTION_LOST, handleConnectionLost);
     this.addAction(ActionTypes.CONNECTION_RECONNECT, handleReconnect);
-    this.addAction(
-      ActionTypes.SEND_MESSAGE,
-      withNoMutations(handleSendMessage)
-    );
+    this.addAction(ActionTypes.SEND_MESSAGE, withNoMutations(handleSendMessage));
   }
 
   getInitialState() {
     return immutable.fromJS({
       connected: false,
-      connecting: true
+      connecting: true,
     });
   }
 
@@ -74,8 +97,8 @@ class ConnectionStore extends MapStore {
   }
 
   isConnecting() {
-    // return this.getState().get("connecting");
-    return false;
+    return this.getState().get("connecting");
+    // return false;
   }
 }
 

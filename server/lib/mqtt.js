@@ -4,12 +4,13 @@ const chalk = require("chalk");
 const mqtt = require("mqtt");
 
 const { log } = require("../util/log")("mqtt");
+const { TOPIC_TYPES } = require("./parser");
 
 class MqttClient extends EventEmitter {
-  constructor(config) {
+  constructor(config, parser) {
     super();
+    this.parser = parser;
 
-    this.onMessage = this.onMessage.bind(this);
     this.onConnect = this.onConnect.bind(this);
     this.onDisconnect = this.onDisconnect.bind(this);
 
@@ -26,35 +27,19 @@ class MqttClient extends EventEmitter {
 
     this.mqtt.on("connect", this.onConnect);
     this.mqtt.on("disconnect", this.onDisconnect);
-    this.mqtt.on("message", this.onMessage);
+    this.mqtt.on("message", (topic, payload) => this.onMessage(topic, payload.toString()));
   }
 
   onConnect() {
     log(`Connection established as client: ${this.clientId}`);
     this.emit("connected");
 
-    let { base_topic } = this.config.homie;
-    if (base_topic.endsWith("/")) {
-      base_topic = base_topic.replace(/\/$/, "");
+    let { base_topic: baseTopic } = this.config.homie;
+    if (baseTopic.endsWith("/")) {
+      baseTopic = baseTopic.replace(/\/$/, "");
     }
 
-    const deviceTopic = `${base_topic}/+/+`;
-    this.mqtt.subscribe(deviceTopic, (error) => {
-      if (error) {
-        log(chalk.red("Error:"), error);
-        return;
-      }
-      log(`Subscribed to topic: ${deviceTopic}`);
-    });
-
-    const devicePropertyTopic = `${base_topic}/+/+/+`;
-    this.mqtt.subscribe(devicePropertyTopic, (error) => {
-      if (error) {
-        log(chalk.red("Error:"), error);
-        return;
-      }
-      log(`Subscribed to topic: ${devicePropertyTopic}`);
-    });
+    this.mqtt.subscribe(`${baseTopic}/#`);
   }
 
   onDisconnect() {
@@ -62,32 +47,32 @@ class MqttClient extends EventEmitter {
     this.emit("Disconnected");
   }
 
-  onMessage(topic, message) {
-    message = message.toString();
-    log("message:", topic, message);
-    this.emit("message", topic, message);
+  onMessage(topic, payload) {
+    log("message:", topic, payload);
+    this.emit("message", topic, payload);
 
-    const [prefix, deviceId, ...rest] = topic.split("/");
+    const message = this.parser.parse(topic, payload);
 
-    this.emit("device", deviceId, rest.join("/"), message);
-    if (rest[0].startsWith("$")) {
-      this.emit("device-attribute", deviceId, rest.join("/"), message);
-    } else {
-      if (rest.length == 2 && rest[1].startsWith("$")) {
-        const [nodeId, attribute] = rest;
-        this.emit("device-node-attribute", deviceId, nodeId, attribute, message);
-      } else {
-        const [nodeId, propertyId] = rest;
-        this.emit("device-node-property", deviceId, nodeId, propertyId, message);
-      }
+    switch (message.type) {
+      case TOPIC_TYPES.DEVICE_ATTRIBUTE:
+        this.emit("device", message);
+        break;
 
-      if (rest.length === 3 && rest[rest.length - 1] === "set") {
-        // Node property setter here. Nothing to be handled
-      }
+      case TOPIC_TYPES.DEVICE_NODE_ATTRIBUTE:
+        this.emit("node", message);
+        break;
+
+      case TOPIC_TYPES.DEVICE_NODE_PROPERTY:
+      case TOPIC_TYPES.DEVICE_NODE_PROPERTY_ATTRIBUTE:
+        this.emit("property", message);
+        break;
+
+      default:
+        break;
     }
   }
 }
 
-exports.createMqttClient = function createMqttClient(config) {
-  return new MqttClient(config);
+exports.createMqttClient = function createMqttClient(config, topicParser) {
+  return new MqttClient(config, topicParser);
 };

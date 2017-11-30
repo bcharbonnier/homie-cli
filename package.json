@@ -1,7 +1,8 @@
 {
   "name": "homie-cli",
   "version": "1.0.0",
-  "description": "Homie Server CLI create a server with an interactive UI to manage local instances of Homie devices",
+  "description":
+    "Homie Server CLI create a server with an interactive UI to manage local instances of Homie devices",
   "main": "index.js",
   "bin": {
     "homie": "bin/index.js"
@@ -10,7 +11,7 @@
     "console:start": "cd console && npm run start",
     "console:build": "cd console && npm run build",
     "console:prod": "NODE_ENV=production && npm run console:build && homie server start",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -28,7 +29,6 @@
     "chalk": "^2.3.0",
     "chokidar": "^1.7.0",
     "commander": "^2.12.1",
-    "eventemitter3": "^3.0.0",
     "express": "^4.16.2",
     "filesize": "^3.5.11",
     "glob": "^7.1.2",
@@ -45,6 +45,7 @@
     "eslint-plugin-import": "2.8.0",
     "eslint-plugin-node": "5.2.1",
     "eslint-plugin-promise": "3.6.0",
-    "eslint-plugin-standard": "3.0.1"
+    "eslint-plugin-standard": "3.0.1",
+    "jest": "21.2.1"
   }
 }
