@@ -26,7 +26,7 @@ class MqttClient extends EventEmitter {
     });
 
     this.mqtt.on("connect", this.onConnect);
-    this.mqtt.on("disconnect", this.onDisconnect);
+    this.mqtt.on("close", this.onDisconnect);
     this.mqtt.on("message", (topic, payload) => this.onMessage(topic, payload.toString()));
   }
 
