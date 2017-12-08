@@ -27,7 +27,8 @@ class ConnectionButton extends React.Component {
         className={classnames("button", {
           "is-loading": connecting,
           "is-dark": !connected,
-          "is-success": connected,
+          "is-success": connected && mqttConnected,
+          "is-warning": connected && !mqttConnected,
         })}
         title={!mqttConnected && "The underlying connection to MQTT broker has been lost"}
       >
