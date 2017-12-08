@@ -2,11 +2,13 @@ import React from "react";
 import { Container } from "flux/utils";
 import { Route } from "react-router";
 
+import * as DeviceAction from "../actions/DeviceAction";
+
 import Fetching from "./Fetching.react";
 import DeviceList from "./DeviceList.react";
 import DeviceDelete from "./DeviceDelete.react";
 import DeviceReset from "./DeviceReset.react";
-import DeviceStore from "../stores/DeviceStore";
+import DeviceFilterStore from "../stores/DeviceFilterStore";
 import DeviceStateStore from "../stores/DeviceStateStore";
 
 const NoDevice = props => (
@@ -14,6 +16,13 @@ const NoDevice = props => (
     <div className="column">
       <div className="has-text-centered">
         {props.fetching ? "Fetching devices list..." : "No device"}
+        {props.filter &&
+          props.filter.length > 0 && (
+            <span>
+              {" "}
+              matching '<em>{props.filter}'</em>
+            </span>
+          )}
       </div>
     </div>
   </div>
@@ -21,18 +30,19 @@ const NoDevice = props => (
 
 class DevicesContainer extends React.Component {
   static getStores() {
-    return [DeviceStore, DeviceStateStore];
+    return [DeviceFilterStore, DeviceStateStore];
   }
 
   static calculateState() {
     return {
-      devices: DeviceStore.getDevices(),
-      fetching: DeviceStateStore.isFetchOnGoing()
+      filter: DeviceFilterStore.filter,
+      devices: DeviceFilterStore.getDevices(),
+      fetching: DeviceStateStore.isFetchOnGoing(),
     };
   }
 
   render() {
-    const { devices, fetching } = this.state;
+    const { devices, fetching, filter } = this.state;
     return (
       <div className="container">
         <div className="level">
@@ -45,6 +55,7 @@ class DevicesContainer extends React.Component {
                 className="input is-small"
                 type="search"
                 placeholder="Filter"
+                onInput={event => DeviceAction.filterList(event.target.value)}
               />
               <span className="icon is-small is-right">
                 <i className="fa fa-search" />
@@ -70,7 +81,7 @@ class DevicesContainer extends React.Component {
           {devices.size > 0 && <DeviceList devices={devices} />}
         </table>
         <Fetching active={fetching} />
-        {devices.size === 0 && !fetching && <NoDevice />}
+        {devices.size === 0 && !fetching && <NoDevice filter={filter} />}
       </div>
     );
   }

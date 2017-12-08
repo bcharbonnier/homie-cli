@@ -36,6 +36,8 @@ export const ActionTypes = keyMirror({
 
   NOTIFICATION_ADD: null,
   NOTIFICATION_REMOVE: null,
+
+  DEVICE_FILTER: null,
 });
 
 export const NOTIFICATION = {

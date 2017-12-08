@@ -30,7 +30,7 @@ class ConnectionButton extends React.Component {
           "is-success": connected && mqttConnected,
           "is-warning": connected && !mqttConnected,
         })}
-        title={!mqttConnected && "The underlying connection to MQTT broker has been lost"}
+        title={!mqttConnected ? "The underlying connection to MQTT broker has been lost" : ""}
       >
         {!mqttConnected
           ? [

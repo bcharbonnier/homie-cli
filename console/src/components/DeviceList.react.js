@@ -25,7 +25,7 @@ class DeviceList extends React.PureComponent {
         </td>
         <td>
           <div>{device.name}</div>
-          <div className="content is-small">{device.id}</div>
+          <div className="content tag is-small">{device.id}</div>
         </td>
         <td>
           <NotAvailableWrapper condition={device.implementation === "esp8266" && device.online}>
@@ -44,22 +44,19 @@ class DeviceList extends React.PureComponent {
           </NotAvailableWrapper>
         </td>
         <td>
-          <div>{device["fw/name"]}</div>
-          <div className="content is-small">
-            <div className="level">
-              <div className="level-left">
-                <span className="level-item icon is-small">
-                  <i
-                    className={classnames("fa", {
-                      "fa-microchip": device.implementation === "esp8266",
-                      "fa-desktop": device.implementation !== "esp8266",
-                    })}
-                    aria-hidden="true"
-                  />
-                </span>
-                <span className="level-item">{device.implementation}</span>
-              </div>
-            </div>
+          <div className="">{device["fw/name"]}</div>
+
+          <div className="content is-small tag">
+            <span className="icon">
+              <i
+                className={classnames("fa", {
+                  "fa-microchip": device.implementation === "esp8266",
+                  "fa-desktop": device.implementation !== "esp8266",
+                })}
+                aria-hidden="true"
+              />
+            </span>
+            <span>{device.implementation}</span>
           </div>
         </td>
         <td className="has-text-centered">{device["fw/version"]}</td>
