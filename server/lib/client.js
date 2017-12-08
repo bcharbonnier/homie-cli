@@ -8,32 +8,53 @@ module.exports = class Client extends EventEmitter {
     this.mqttClient = mqttClient;
     this.deviceClient = deviceClient;
 
-    this.socket.on("disconnect", () => this.emit("disconnect"));
+    this.onMqttConnected = this.onMqttConnected.bind(this);
+    this.onMqttDisconnected = this.onMqttDisconnected.bind(this);
+    this.onMqttMessage = this.onMqttMessage.bind(this);
 
-    this.sendDevices(this.deviceClient.devices);
+    this.onDeviceUpdate = this.onDeviceUpdate.bind(this);
+    this.onDevicesUpdate = this.onDevicesUpdate.bind(this);
+
+    this.socket.on("disconnect", () => {
+      this.emit("disconnect");
+    });
 
     this.mqttClient
-      .on("message", (topic, message) => {
-        this.socket.emit("mqtt.message", topic, message);
-      })
-      .on("connected", () => {
-        this.socket.emit("mqtt", { connected: true });
-      })
-      .on("disconnected", () => {
-        this.socket.emit("mqtt", { connected: false });
-      });
+      .on("message", this.onMqttMessage)
+      .on("connected", this.onMqttConnected)
+      .on("disconnected", this.onMqttDisconnected);
 
-    this.deviceClient
-      .on("update", (deviceId, device, attribute, value) =>
-        this.sendDeviceUpdate(deviceId, attribute, value))
-      .on("devices", devices => this.sendDevices(devices));
+    this.deviceClient.on("update", this.onDeviceUpdate).on("devices", this.onDevicesUpdate);
+
+    this.onDevicesUpdate(this.deviceClient.devices);
   }
 
-  sendDeviceUpdate(deviceId, attribute, value) {
+  onMqttMessage(topic, message) {
+    this.socket.emit("mqtt.message", topic, message);
+  }
+
+  onMqttConnected() {
+    this.socket.emit("mqtt", { connected: true });
+  }
+
+  onMqttDisconnected() {
+    this.socket.emit("mqtt", { connected: false });
+  }
+
+  onDeviceUpdate(deviceId, attribute, value) {
     this.socket.emit("device.update", deviceId, attribute, value);
   }
 
-  sendDevices(devices) {
+  onDevicesUpdate(devices) {
     this.socket.emit("devices.update", devices);
+  }
+
+  destroy() {
+    this.mqttClient.removeListener("message", this.onMqttMessage);
+    this.mqttClient.removeListener("connected", this.onMqttConnected);
+    this.mqttClient.removeListener("disconnected", this.onMqttDisconnected);
+
+    this.deviceClient.removeListener("update", this.onDeviceUpdate);
+    this.deviceClient.removeListener("devices", this.onDevicesUpdate);
   }
 };
