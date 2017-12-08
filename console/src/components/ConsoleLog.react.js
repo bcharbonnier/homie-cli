@@ -3,7 +3,7 @@ import { Container } from "flux/utils";
 import moment from "moment";
 import classnames from "classnames";
 
-import MessageStore from "../stores/MessageStore";
+import MQTTStore from "../stores/MQTTStore";
 
 function timestamp(date) {
   return `${moment(date).format("HH:mm:ss")}`;
@@ -11,12 +11,12 @@ function timestamp(date) {
 
 class Console extends React.Component {
   state = {
-    fullscreen: false
+    fullscreen: false,
   };
 
   toggleFullscreen() {
     this.setState(({ fullscreen }) => ({
-      fullscreen: !fullscreen
+      fullscreen: !fullscreen,
     }));
   }
 
@@ -30,14 +30,16 @@ class Console extends React.Component {
 
   render() {
     const { fullscreen } = this.state;
-    const messages = this.props.messages.map(payload => {
-      const { id, message, topic, date, error, deleted } = payload;
+    const messages = this.props.messages.map((payload) => {
+      const {
+        id, message, topic, date, error, deleted,
+      } = payload;
       return (
         <div
           key={id}
           className={classnames("log-line", {
             "is-error": !!error,
-            "is-deleted": deleted
+            "is-deleted": deleted,
           })}
         >
           <time className="timestamp" dateTime={date}>
@@ -54,7 +56,7 @@ class Console extends React.Component {
         className={classnames("console", {
           container: !fullscreen,
           section: fullscreen,
-          "is-overlay": fullscreen
+          "is-overlay": fullscreen,
         })}
       >
         <div className="level">
@@ -67,7 +69,7 @@ class Console extends React.Component {
                 <i
                   className={classnames("fa", {
                     "fa-window-maximize": !fullscreen,
-                    "fa-close": fullscreen
+                    "fa-close": fullscreen,
                   })}
                   aria-hidden="true"
                 />
@@ -88,12 +90,12 @@ class Console extends React.Component {
 
 class ConsoleContainer extends React.Component {
   static getStores() {
-    return [MessageStore];
+    return [MQTTStore];
   }
 
   static calculateState() {
     return {
-      messages: MessageStore.getMessages()
+      messages: MQTTStore.getMessages(),
     };
   }
 

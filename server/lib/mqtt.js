@@ -44,7 +44,7 @@ class MqttClient extends EventEmitter {
 
   onDisconnect() {
     log("Disconnected from broker");
-    this.emit("Disconnected");
+    this.emit("disconnected");
   }
 
   onMessage(topic, payload) {

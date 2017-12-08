@@ -4,9 +4,8 @@ import { ActionTypes } from "../Constants";
 import DeviceStore from "../stores/DeviceStore";
 
 export const receiveMessage = (topic, message, deviceId, deleted = false) => {
-  console.log(topic, message);
   const payload = {
-    type: ActionTypes.MESSAGE_RECEIVED,
+    type: ActionTypes.MQTT_MESSAGE_RECEIVED,
     topic: topic.toString(),
     message: message.toString(),
     deleted,
@@ -16,4 +15,10 @@ export const receiveMessage = (topic, message, deviceId, deleted = false) => {
     payload.error = true;
   }
   dispatch(payload);
+};
+
+export const receiveGenericMessage = ({ connected }) => {
+  dispatch({
+    type: connected ? ActionTypes.MQTT_CONNECTED : ActionTypes.MQTT_DISCONNECTED,
+  });
 };

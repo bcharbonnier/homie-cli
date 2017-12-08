@@ -4,22 +4,20 @@ import classnames from "classnames";
 
 import ConnectionButton from "./ConnectionButton.react";
 
-const NavLink = props => {
-  return (
-    <Link activeClassName="is-active" className="navbar-item" {...props}>
-      {props.children}
-    </Link>
-  );
-};
+const NavLink = props => (
+  <Link activeClassName="is-active" className="navbar-item" {...props}>
+    {props.children}
+  </Link>
+);
 
 export default class Navbar extends React.Component {
   state = {
-    hamburgerActive: false
+    hamburgerActive: false,
   };
 
   toggleHamburger() {
     this.setState(({ hamburgerActive }) => ({
-      hamburgerActive: !hamburgerActive
+      hamburgerActive: !hamburgerActive,
     }));
   }
 
@@ -37,9 +35,10 @@ export default class Navbar extends React.Component {
           <Link className="navbar-item" to="/">
             <strong>Homie</strong>Monitor
           </Link>
+
           <div
-            className={classnames("navbar-burger burger", {
-              "is-active": hamburgerActive
+            className={classnames("navbar-burger", {
+              "is-active": hamburgerActive,
             })}
             onClick={() => this.toggleHamburger()}
           >
@@ -51,7 +50,7 @@ export default class Navbar extends React.Component {
 
         <div
           className={classnames("navbar-menu", {
-            "is-active": hamburgerActive
+            "is-active": hamburgerActive,
           })}
           onClick={() => this.mightHideNavbar()}
         >

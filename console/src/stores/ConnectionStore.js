@@ -6,7 +6,7 @@ import { MapStore, withNoMutations } from "../lib/Flux";
 
 import { ActionTypes } from "../Constants";
 
-import * as MessageAction from "../actions/MessageAction";
+import * as MQTTAction from "../actions/MQTTAction";
 import * as NotificationAction from "../actions/NotificationAction";
 
 const client = io("ws://localhost:5000", {
@@ -45,7 +45,8 @@ Please check your network connection`);
   });
 });
 
-client.on("mqtt.message", MessageAction.receiveMessage);
+client.on("mqtt.message", MQTTAction.receiveMessage);
+client.on("mqtt", MQTTAction.receiveGenericMessage);
 client.on("device.update", (deviceId, attribute, value) => {
   dispatch({
     type: ActionTypes.DEVICE_PROPERTY_UPDATE,

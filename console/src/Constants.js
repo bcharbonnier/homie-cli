@@ -20,8 +20,11 @@ export const ActionTypes = keyMirror({
   UPLOAD_FIRMWARE_FAILURE: null,
 
   DEVICE_RECEIVED: null,
-  MESSAGE_RECEIVED: null,
   SEND_MESSAGE: null,
+
+  MQTT_MESSAGE_RECEIVED: null,
+  MQTT_CONNECTED: null,
+  MQTT_DISCONNECTED: null,
 
   DEVICE_PROPERTY_UPDATE: null,
   DEVICE_NODE_TYPE_UPDATE: null,
@@ -32,13 +35,13 @@ export const ActionTypes = keyMirror({
   DEVICE_DELETE_SUCCESS: null,
 
   NOTIFICATION_ADD: null,
-  NOTIFICATION_REMOVE: null
+  NOTIFICATION_REMOVE: null,
 });
 
 export const NOTIFICATION = {
   ERROR: 1 << 0,
   WARNING: 1 << 1,
-  SUCCESS: 1 << 2
+  SUCCESS: 1 << 2,
 };
 
 export const NOTIFICATION_DEFAULT_TIME = 3 * 1000;

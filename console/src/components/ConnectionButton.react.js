@@ -4,21 +4,24 @@ import { Container } from "flux/utils";
 import classnames from "classnames";
 
 import ConnectionStore from "../stores/ConnectionStore";
+import MQTTStore from "../stores/MQTTStore";
 
 class ConnectionButton extends React.Component {
   static getStores() {
-    return [ConnectionStore];
+    return [ConnectionStore, MQTTStore];
   }
 
   static calculateState() {
     return {
       connected: ConnectionStore.isConnected(),
       connecting: ConnectionStore.isConnecting(),
+      mqttConnected: MQTTStore.isConnected(),
     };
   }
 
   render() {
-    const { connected, connecting } = this.state;
+    const { connected, connecting, mqttConnected } = this.state;
+    const text = connected ? "Connected" : "Disconnected";
     return (
       <a
         className={classnames("button", {
@@ -26,8 +29,16 @@ class ConnectionButton extends React.Component {
           "is-dark": !connected,
           "is-success": connected,
         })}
+        title={!mqttConnected && "The underlying connection to MQTT broker has been lost"}
       >
-        {connected ? "Connected" : "Disconnected"}
+        {!mqttConnected
+          ? [
+              <span key="icon" className="icon is-small">
+                <i className="fa fa-exclamation-triangle" />
+              </span>,
+              <span key="text">{text}</span>,
+            ]
+          : text}
       </a>
     );
   }
